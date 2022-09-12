@@ -92,3 +92,23 @@ FROM (
 ) AS tmp
 GROUP BY txn_month ORDER BY txn_month
 ;
+
+--B.4
+SELECT *,
+SUM(txn_amount) OVER (PARTITION BY customer_id ORDER BY month_ ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS balance
+
+FROM
+(SELECT customer_id,DATE_TRUNC('Month',txn_date) AS month_, SUM(txn_group)AS txn_amount 
+FROM
+  (SELECT *,
+  CASE WHEN txn_type = 'deposit' THEN txn_amount
+  ELSE -1 * txn_amount END AS txn_group
+  FROM data_bank.Customer_Transactions
+  ORDER BY customer_id, txn_date
+  ) AS tmp1
+GROUP BY 1,2
+ORDER BY 1,2 
+)AS tmp2
+ORDER BY customer_id, month_
+;
+  
